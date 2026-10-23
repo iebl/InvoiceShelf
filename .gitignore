@@ -31,6 +31,11 @@ yarn.lock
 /docker/production/docker-compose.yml
 /docker-compose.yaml
 
+# E-invoice conformance run: the Hybrid PDF under test and the validators the
+# job downloads (see .github/workflows/einvoice-conformance.yaml).
+/storage/app/conformance
+/.conformance
+
 # Agent docs: AGENTS.md is the canonical, committed source of truth.
 # The per-tool files are local symlinks to it — `composer run ai-docs` creates them.
 /CLAUDE.md

@@ -161,6 +161,15 @@ const settingsRoutes: RouteRecordRaw[] = [
         component: () => import('./views/ExchangeRateView.vue'),
       },
       {
+        path: 'e-invoice',
+        name: 'settings.e-invoice',
+        meta: {
+          requiresAuth: true,
+          isOwner: true,
+        },
+        component: () => import('./views/EInvoiceView.vue'),
+      },
+      {
         path: 'mail-config',
         name: 'settings.mail-config',
         meta: {

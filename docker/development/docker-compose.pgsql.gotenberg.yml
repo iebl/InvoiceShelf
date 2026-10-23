@@ -74,7 +74,8 @@ services:
       - invoiceshelf-dev
 
   pdf:
-    image: gotenberg/gotenberg:8
+    # Keep at >= 8.34 — see "Gotenberg version" in docker/development/README.md.
+    image: gotenberg/gotenberg:8.36
     networks:
       - invoiceshelf-dev
 

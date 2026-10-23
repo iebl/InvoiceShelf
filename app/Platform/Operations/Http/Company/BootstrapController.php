@@ -9,6 +9,7 @@ use App\Domains\Accounts\Http\Resources\UserResource;
 use App\Domains\Accounts\Models\Company;
 use App\Domains\Accounts\Models\CompanyInvitation;
 use App\Domains\Money\Models\Currency;
+use App\Domains\Sales\Application\EInvoiceSettings;
 use App\Platform\Http\Controller;
 use App\Platform\Modules\Models\Module;
 use App\Platform\Operations\Http\Concerns\GeneratesMenu;
@@ -34,7 +35,10 @@ class BootstrapController extends Controller
      * Every member gets this payload, so it carries no credentials; see
      * MemberVisibleSettings and Setting::SHELL_SETTINGS.
      */
-    public function __construct(private readonly MemberVisibleSettings $memberVisibleSettings) {}
+    public function __construct(
+        private readonly MemberVisibleSettings $memberVisibleSettings,
+        private readonly EInvoiceSettings $einvoiceSettings,
+    ) {}
 
     /**
      * Handle the incoming request.
@@ -82,6 +86,9 @@ class BootstrapController extends Controller
             'current_company_currency' => $currency,
             'config' => config('invoiceshelf'),
             'global_settings' => Setting::getSettings(Setting::SHELL_SETTINGS),
+            // Shared by all three response shapes, so the SPA always learns
+            // whether e-invoicing is available before it renders anything.
+            'e_invoice' => $this->einvoiceSettings->context(),
             'main_menu' => [],
             'setting_menu' => [],
             'modules' => [],

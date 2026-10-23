@@ -38,6 +38,7 @@ class InvoiceService implements InvoicePdfDataProvider
         private readonly CustomFieldValueWriter $customFieldValueWriter,
         private readonly DocumentExchangeRateRecorder $exchangeRateRecorder,
         private readonly InvoiceEmailSender $invoiceEmailSender,
+        private readonly EInvoiceAttachmentResolver $eInvoiceAttachments,
     ) {}
 
     /**
@@ -269,12 +270,15 @@ class InvoiceService implements InvoicePdfDataProvider
                 foreach ($item->taxes as $appliedTax) {
                     // Rows of one tax type collapse onto the first row seen for
                     // it, which then carries the running total for the document.
+                    // The running row is a copy: the originals are the models the
+                    // e-invoice builder reads afterwards, and a total written
+                    // into one of them would be counted twice.
                     $running = $taxes->first(fn ($seen) => $seen->tax_type_id == $appliedTax->tax_type_id);
 
                     if ($running) {
                         $running->amount += $appliedTax->amount;
                     } else {
-                        $taxes->push($appliedTax);
+                        $taxes->push(clone $appliedTax);
                     }
                 }
             }
@@ -336,11 +340,20 @@ class InvoiceService implements InvoicePdfDataProvider
             return view($templatePath);
         }
 
-        return Pdf::loadView($templatePath, PdfMetadata::forDocument(
-            __($invoice->isCreditNote() ? 'pdf_credit_note_label' : 'pdf_invoice_label'),
-            $invoice->invoice_number,
-            $company,
-        ));
+        // Every delivery path — download/stream, email attachment and the
+        // customer portal — reaches the PDF pipeline through this method, so
+        // resolving the e-invoice here is what makes all of them produce the
+        // same document. Null is the Fallback: the ordinary PDF.
+        return Pdf::loadView(
+            $templatePath,
+            PdfMetadata::forDocument(
+                __($invoice->isCreditNote() ? 'pdf_credit_note_label' : 'pdf_invoice_label'),
+                $invoice->invoice_number,
+                $company,
+            ),
+            null,
+            $this->eInvoiceAttachments->resolve($invoice),
+        );
     }
 
     public function clone(Invoice $invoice): Invoice

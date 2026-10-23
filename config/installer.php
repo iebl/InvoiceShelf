@@ -64,6 +64,7 @@ return [
             'mbstring',
             'json',
             'xml',
+            'simplexml', // horstoeko/zugferd (e-invoice XML) needs it next to ext-xml
             'fileinfo',
             'zip',
             'curl',

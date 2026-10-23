@@ -15,8 +15,19 @@ use Illuminate\Support\Facades\App;
  */
 class DompdfDriver implements PdfDriver
 {
-    public function loadView(string $template, array $metadata = [], ?PdfPageSetup $page = null): ResponseStream
-    {
+    /**
+     * The `$eInvoice` argument is accepted and ignored: dompdf has no real
+     * PDF/A-3 support, so it cannot build the container a Hybrid PDF needs
+     * (ADR 0005). Nothing ever passes one either — E-Invoicing reports itself
+     * unavailable unless the instance runs Gotenberg, so the Fallback has
+     * already applied by the time a document reaches this driver.
+     */
+    public function loadView(
+        string $template,
+        array $metadata = [],
+        ?PdfPageSetup $page = null,
+        ?FacturXAttachment $eInvoice = null,
+    ): ResponseStream {
         $page ??= PdfPageSetup::fromConfig();
 
         $html = $this->withPageMargins(view($template)->render(), $page);

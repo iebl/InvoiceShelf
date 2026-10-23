@@ -70,6 +70,17 @@
         </template>
       </BasePageHeader>
 
+      <!-- Fallback warning: this invoice's data cannot produce valid e-invoice
+           XML, so its PDF goes out as an ordinary one. Shown here, where the
+           data can still be fixed. -->
+      <BaseEInvoiceReadiness
+        v-if="eInvoiceFallback"
+        :ready="false"
+        :missing-requirements="eInvoiceReadiness?.missing_requirements ?? []"
+        :warning-title="$t('e_invoice.fallback_title')"
+        :warning-description="$t('e_invoice.fallback_desc')"
+      />
+
       <!-- What the document says, without opening it -->
       <BaseStatStrip :columns="5">
         <BaseStat :label="$t('dashboard.recent_invoices_card.amount_due')" emphasis>
@@ -286,6 +297,10 @@ import { useBreakpoints } from '@/scripts/composables/use-breakpoints'
 import { useUserStore } from '../../../../stores/user.store'
 import { useDialogStore } from '../../../../stores/dialog.store'
 import { useModalStore } from '../../../../stores/modal.store'
+import { useCompanyStore } from '@/scripts/stores/company.store'
+import { useGlobalStore } from '@/scripts/stores/global.store'
+import { einvoiceService } from '@/scripts/api/services/einvoice.service'
+import type { InvoiceEInvoiceReadiness } from '@/scripts/api/services/einvoice.service'
 import type { Invoice, InvoicePaymentAllocation } from '../../../../types/domain/invoice'
 import { scrollBehavior } from '@/scripts/utils/motion'
 
@@ -318,6 +333,8 @@ const ABILITIES = {
 
 const invoiceStore = useInvoiceStore()
 const userStore = useUserStore()
+const companyStore = useCompanyStore()
+const globalStore = useGlobalStore()
 const dialogStore = useDialogStore()
 const modalStore = useModalStore()
 const { t } = useI18n()
@@ -426,6 +443,41 @@ const isFullyCredited = computed<boolean>(() => {
 })
 
 const invoicePaymentAllocations = computed<InvoicePaymentAllocation[]>(() => invoiceData.value?.payment_allocations ?? [])
+
+/**
+ * Whether this invoice would trigger the Fallback: an ordinary PDF instead of
+ * a Hybrid PDF, because its data cannot produce valid e-invoice XML. The server
+ * decides it from the same check the PDF pipeline runs; a complete invoice
+ * reports no fallback and so shows no warning.
+ */
+const eInvoiceReadiness = ref<InvoiceEInvoiceReadiness | null>(null)
+
+const eInvoiceFallback = computed<boolean>(() => eInvoiceReadiness.value?.fallback === true)
+
+/**
+ * Only a company that issues e-invoices can fall back — its own switch and the
+ * instance PDF driver both have to hold. The check is not even asked for
+ * otherwise, since it builds the whole XML to answer.
+ */
+const issuesEInvoices = computed<boolean>(
+  () =>
+    globalStore.eInvoice?.available === true &&
+    companyStore.selectedCompanySettings.einvoice_enabled === 'YES'
+)
+
+async function loadEInvoiceReadiness(id: number): Promise<void> {
+  if (!issuesEInvoices.value) {
+    eInvoiceReadiness.value = null
+    return
+  }
+
+  try {
+    eInvoiceReadiness.value = await einvoiceService.invoiceReadiness(id)
+  } catch {
+    // Without a verdict there is nothing to warn about; the page stays whole.
+    eInvoiceReadiness.value = null
+  }
+}
 
 const getOrderBy = computed<boolean>(() => {
   return searchData.orderBy === 'asc' || searchData.orderBy === null
@@ -556,10 +608,13 @@ function addScrollListener(): void {
 }
 
 async function loadInvoice(): Promise<void> {
-  const response = await invoiceStore.fetchInvoice(Number(route.params.id))
+  const id = Number(route.params.id)
+  const response = await invoiceStore.fetchInvoice(id)
   if (response.data) {
     invoiceData.value = { ...response.data.data } as Invoice
   }
+
+  await loadEInvoiceReadiness(id)
 }
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null

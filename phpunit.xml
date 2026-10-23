@@ -7,7 +7,21 @@
     <testsuite name="Feature">
       <directory suffix="Test.php">./tests/Feature</directory>
     </testsuite>
+    <!--
+      End-to-end conformance proof: needs a real Gotenberg service plus the
+      Mustang and veraPDF validators, so it is excluded from every ordinary run
+      by the `conformance` group below and only selected explicitly, by the CI
+      job that provisions those tools (.github/workflows/einvoice-conformance.yaml).
+    -->
+    <testsuite name="Conformance">
+      <directory suffix="Test.php">./tests/Conformance</directory>
+    </testsuite>
   </testsuites>
+  <groups>
+    <exclude>
+      <group>conformance</group>
+    </exclude>
+  </groups>
   <php>
     <env name="APP_ENV" value="testing"/>
     <env name="BCRYPT_ROUNDS" value="4"/>

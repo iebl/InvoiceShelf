@@ -12,6 +12,13 @@ use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class)->in('Feature');
 uses(TestCase::class, RefreshDatabase::class)->in('Unit');
+uses(TestCase::class, RefreshDatabase::class)->in('Conformance');
+
+// The conformance proof talks to a real Gotenberg service and shells out to the
+// Mustang and veraPDF validators. phpunit.xml excludes this group from every
+// run, so `php artisan test` stays service-free; the dedicated CI job selects it
+// with `--group=conformance`.
+uses()->group('conformance')->in('Conformance');
 
 // Module-system tests scaffold, install, and remove real directories under
 // Modules. Paratest isolates the database but not that shared filesystem path,

@@ -2,7 +2,11 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import groupBy from 'lodash/groupBy'
 import { bootstrapService } from '@/scripts/api/services/bootstrap.service'
-import type { MenuItem, BootstrapResponse } from '@/scripts/api/services/bootstrap.service'
+import type {
+  MenuItem,
+  BootstrapResponse,
+  EInvoiceContext,
+} from '@/scripts/api/services/bootstrap.service'
 import { settingService } from '@/scripts/api/services/setting.service'
 import type {
   DateFormat,
@@ -25,6 +29,7 @@ export const useGlobalStore = defineStore('global', () => {
   // State
   const config = ref<Record<string, unknown> | null>(null)
   const globalSettings = ref<Record<string, string> | null>(null)
+  const eInvoice = ref<EInvoiceContext | null>(null)
 
   const timeZones = ref<Array<{ key: string; value: string }>>([])
   const dateFormats = ref<DateFormat[]>([])
@@ -33,6 +38,7 @@ export const useGlobalStore = defineStore('global', () => {
   const countries = ref<Country[]>([])
   const languages = ref<Array<{ code: string; name: string }>>([])
   const fiscalYears = ref<Array<{ key: string; value: string }>>([])
+  const unitCodes = ref<Array<{ key: string; value: string }>>([])
 
   const mainMenu = ref<MenuItem[]>([])
   const settingMenu = ref<MenuItem[]>([])
@@ -75,6 +81,7 @@ export const useGlobalStore = defineStore('global', () => {
       userMenu.value = response.user_menu ?? []
       config.value = response.config
       globalSettings.value = response.global_settings
+      eInvoice.value = response.e_invoice ?? null
 
       // user store
       userStore.currentUser = response.current_user
@@ -168,6 +175,11 @@ export const useGlobalStore = defineStore('global', () => {
         }>
       } else if ((response as Record<string, unknown>).fiscal_years) {
         fiscalYears.value = (response as Record<string, unknown>).fiscal_years as Array<{
+          key: string
+          value: string
+        }>
+      } else if ((response as Record<string, unknown>).unit_codes) {
+        unitCodes.value = (response as Record<string, unknown>).unit_codes as Array<{
           key: string
           value: string
         }>
@@ -311,6 +323,7 @@ export const useGlobalStore = defineStore('global', () => {
     // State
     config,
     globalSettings,
+    eInvoice,
     timeZones,
     dateFormats,
     timeFormats,
@@ -318,6 +331,7 @@ export const useGlobalStore = defineStore('global', () => {
     countries,
     languages,
     fiscalYears,
+    unitCodes,
     mainMenu,
     settingMenu,
     userMenu,

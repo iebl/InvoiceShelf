@@ -18,6 +18,8 @@ class EloquentBusinessDefaultsProvisioner implements CompanyDefaultsProvisioner
             ]);
         }
 
+        // No Unit Code is set here: default units take the model's C62 (piece)
+        // default, exactly like units an existing install already had.
         foreach (['box', 'cm', 'dz', 'ft', 'g', 'in', 'kg', 'km', 'lb', 'mg', 'pc'] as $name) {
             Unit::create([
                 'name' => $name,

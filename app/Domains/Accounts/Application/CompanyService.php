@@ -197,6 +197,7 @@ class CompanyService
             'estimate_convert_action' => 'no_action',
             'automatically_expire_public_links' => 'YES',
             'link_expiry_days' => 7,
+            'einvoice_enabled' => 'NO',
         ], $company->id);
     }
 }

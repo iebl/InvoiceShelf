@@ -79,11 +79,11 @@ test('the sales domain owns document behavior authorization and commands', funct
 test('the sales domain preserves company document routes and middleware', function () {
     $routes = collect(Route::getRoutes()->getRoutes())
         ->filter(fn ($route): bool => preg_match(
-            '#^api/v1/(?:invoices|estimates|recurring-invoices|recurring-invoice-frequency|next-number|number-placeholders)(?:$|/)#',
+            '#^api/v1/(?:invoices|estimates|recurring-invoices|recurring-invoice-frequency|next-number|number-placeholders|e-invoice)(?:$|/)#',
             $route->uri(),
         ) === 1);
 
-    expect($routes)->toHaveCount(34);
+    expect($routes)->toHaveCount(36);
 
     foreach ($routes as $route) {
         expect($route->getActionName())

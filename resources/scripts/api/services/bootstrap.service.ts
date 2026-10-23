@@ -16,6 +16,16 @@ export interface MenuItem {
   ability?: string
 }
 
+/**
+ * Whether this instance can produce Hybrid PDFs at all, and which PDF driver
+ * it takes. Decided server-side so the E-Invoice settings tab never has to
+ * restate the rule.
+ */
+export interface EInvoiceContext {
+  available: boolean
+  required_pdf_driver: string
+}
+
 export interface BootstrapResponse {
   current_user: User
   current_user_settings: Record<string, string>
@@ -28,6 +38,7 @@ export interface BootstrapResponse {
   setting_menu: MenuItem[]
   config: Record<string, unknown>
   global_settings: Record<string, string>
+  e_invoice: EInvoiceContext
   modules: string[]
   user_menu?: Array<{ title: string; link: string; icon: string; priority: number; name: string }>
   admin_mode?: boolean

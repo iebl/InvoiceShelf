@@ -106,10 +106,19 @@ jobs:
             - name: Install Composer dependencies
               uses: ramsey/composer-install@4.0.0
 
+            # --exclude-group on the command line replaces the exclusions in
+            # phpunit.xml rather than adding to them, so `conformance` has to be
+            # named here too — it needs a Gotenberg service and two validators,
+            # and has its own workflow (einvoice-conformance.yaml). A --parallel
+            # run additionally ignores that exclusion for the separate
+            # Conformance testsuite (observed on CI, reproduced locally), so the
+            # suites are selected explicitly as well.
             - name: Apply tests ${{ matrix.php-version }} (parallel)
               # The parallel pipeline honours only the FIRST --exclude-group
               # flag, so all serially-run groups share the one serial-only tag.
-              run: php artisan test --parallel --exclude-group=serial-only
+              # Conformance needs a Gotenberg service and two Java validators,
+              # so it is excluded here and selected only by its own workflow.
+              run: php artisan test --parallel --testsuite=Unit,Feature --exclude-group=conformance,serial-only
 
             - name: Apply module, architecture and isolated tests ${{ matrix.php-version }} (serial)
               run: |

@@ -53,6 +53,9 @@ export const API = {
   INVOICES_DELETE: '/api/v1/invoices/delete',
   INVOICE_TEMPLATES: '/api/v1/invoices/templates',
 
+  // E-Invoice
+  EINVOICE_READINESS: '/api/v1/e-invoice/readiness',
+
   // Recurring Invoices
   RECURRING_INVOICES: '/api/v1/recurring-invoices',
   RECURRING_INVOICES_DELETE: '/api/v1/recurring-invoices/delete',

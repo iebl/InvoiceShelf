@@ -252,3 +252,21 @@ tag via `mobile/scripts/version-code.mjs` and are never edited by hand.
 ## CI Pipeline
 
 GitHub Actions (`check.yaml`): runs Pint style check, then runs Pest tests in parallel (`php artisan test --parallel`) on PHP 8.4 and 8.5 with Xdebug disabled (`coverage: none`). The test job does **not** build the frontend — the suite is API/JSON only and never renders the Vite blade, so no Node/Vite step is needed (release/docker workflows still build assets in their own jobs). When `docker/production/` changes, and on every push to 3.x, it also builds the production image and runs `docker/production/readonly-smoke.sh` on it: read-only root, `INVOICESHELF_DOTENV=false` (no `.env`; the entrypoint refuses to start without `APP_KEY` in the environment), managed mode, headless install. Anything that writes outside `storage/` and `bootstrap/cache` at boot or per request fails it; run it locally with `docker build -f docker/production/Dockerfile -t invoiceshelf:local . && docker/production/readonly-smoke.sh invoiceshelf:local`.
+
+### E-Invoice conformance job
+
+`einvoice-conformance.yaml` is the independent proof that the Hybrid PDFs the app produces really are ZUGFeRD e-invoices. It is the only job with a service container: a real Gotenberg renders a Hybrid PDF from seeded data end-to-end, then **Mustang CLI** validates the embedded XML (EN 16931 XSD + Schematron), the container and the Factur-X XMP, and **veraPDF** confirms PDF/A-3b independently. The finished PDF is uploaded as a job artifact, so a failing run can be opened in a validator by hand.
+
+Those tests live in `tests/Conformance/` and carry the `conformance` group, which `phpunit.xml` excludes — `php artisan test` and `make test` stay service-free. **`--exclude-group` on the command line replaces the exclusions from `phpunit.xml` rather than adding to them**, which is why the standard jobs spell out `--exclude-group=conformance`. A `--parallel` run additionally ignores that exclusion for the separate Conformance testsuite, so the parallel CI steps also pin `--testsuite=Unit,Feature`; `tests/Unit/EInvoiceConformanceCiTest.php` guards all of that (and the rest of the job's wiring) so it cannot drift back.
+
+To reproduce the job locally, provide the same three things it does:
+
+```bash
+docker run --rm -p 3000:3000 gotenberg/gotenberg:8.36   # in another shell
+CONFORMANCE_GOTENBERG_HOST=http://localhost:3000 \
+CONFORMANCE_MUSTANG_JAR=/path/to/Mustang-CLI-2.25.0.jar \
+CONFORMANCE_VERAPDF_BIN=/path/to/verapdf \
+php artisan test --group=conformance
+```
+
+Mustang CLI comes from the [mustangproject releases](https://github.com/ZUGFeRD/mustangproject/releases), veraPDF from its [installer](https://software.verapdf.org/rel/verapdf-installer.zip). A missing one fails the run rather than skipping it: a conformance suite that quietly validated nothing is worse than one that goes red.
